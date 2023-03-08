@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: logstash
+spec:
+  serviceName: logstash
+  replicas: 5
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+      - name: logstash
+        {{- if .Values.defaultImage }}
+        image: msplva-dsnsmt71.csc.nycnet:5000/logstash/logstash:8.5.2
+        {{- else }}
+        image: "{{ .Values.logstashImage }}:{{ .Values.logstashImageTag }}"
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+        resources:
+            limits:
+              cpu: 1000m
+            requests:
+              cpu: 100m
+        ports:
+        - containerPort: 5044
+          name: logstash-udp
+          protocol: UDP
+        - containerPort: 5044
+          name: logstash-tcp
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /usr/share/logstash/pipeline
+          name: pipeline
+      volumes:
+      - name: config
+        configMap:
+          name: logstash-config
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+      - name: pipeline
+        configMap:
+          name: logstash-config
+          items:
+          - key: pipeline.conf
+            path: pipeline.conf 

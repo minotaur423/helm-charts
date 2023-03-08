@@ -1,0 +1,16 @@
+apiVersion: v2
+name: elasticsearch-kibana
+appVersion: 7.5.5
+type: application
+description: EFK(Elasticsearch + fluentd + Kibana)
+sources:
+- https://www.elastic.co/products/elasticsearch
+- https://www.elastic.co/products/kibana
+- https://fluentbit.io/
+home: https://www.elastic.co
+icon: file://../efk-logo.jpg
+maintainers:
+- email: support@rancher.com
+  name: guangbochen
+version: "7.5.5"
+engine: gotpl

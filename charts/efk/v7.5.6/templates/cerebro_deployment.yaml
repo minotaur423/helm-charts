@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cerebro
+  labels:
+    app: cerebro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cerebro
+  template:
+    metadata:
+      labels:
+        app: cerebro
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cerebro
+                operator: In
+                values:
+                - "true"
+      containers:
+      - name: cerebro
+        {{- if .Values.defaultImage }}
+        image: "msplva-dsnsmt71.csc.nycnet:5000/lmenezes/cerebro:0.9.4"
+        {{- else }}
+        image: "{{ .Values.cerebroImage }}:{{ .Values.cerebroImageTag }}"
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+        ports:
+         - containerPort: 9000
+           name: http
+           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+      enableServiceLinks: false

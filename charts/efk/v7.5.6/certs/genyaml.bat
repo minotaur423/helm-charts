@@ -1,0 +1,1 @@
+kubectl create secret generic certificates --from-file=ca_with_ldap.crt --from-file=elastic-stack-ca.p12 --from-file=es-cluster-0.p12 --from-file=es-cluster-1.p12 --from-file=es-cluster-2.p12 --from-file=es-cluster-3.p12 --from-file=es-cluster-4.p12 --from-file=es-cluster-5.p12 --dry-run=true  --output=yaml > certificates.yaml

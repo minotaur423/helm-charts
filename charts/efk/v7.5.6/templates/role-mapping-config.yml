@@ -1,0 +1,15 @@
+{{- if .Values.securityEnabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: role-mapping-config
+data:
+  role_mapping.yml: |-
+    monitoring: 
+      - "cn=DSNYNOVAS_RANCHER_DEV,ou=USERS,dc=DSNY,o=NYCNET" 
+    user:
+      - "cn=DSNYSMT_DEV_OPS,ou=USERS,dc=DSNY,o=NYCNET"
+      - "cn=DSNYNOVAS_RANCHER_ADM,ou=USERS,dc=DSNY,o=NYCNET"
+
+{{- end }}
+

@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: es-cluster
+spec:
+  serviceName: elasticsearch
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: data
+                operator: In
+                values:
+                - "true"
+      containers:
+      - name: elasticsearch
+        {{- if .Values.defaultImage }}
+        image: msplva-dsnsmt71.csc.nycnet:5000/elasticsearch/elasticsearch:8.5.2
+        {{- else }}
+        image: "{{ .Values.elasticsearchImage }}:{{ .Values.elasticsearchImageTag }}"
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+        resources:
+            limits:
+              cpu: 1000m
+            requests:
+              cpu: 100m
+        ports:
+        - containerPort: 9200
+          name: rest
+          protocol: TCP
+        - containerPort: 9300
+          name: inter-node
+          protocol: TCP
+        env:
+          - name: cluster.name
+            value: "k8s-logs"
+          - name: node.name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: discovery.seed_hosts
+            value: "{{ template "hostslist" .Values }}"
+          - name: cluster.initial_master_nodes
+            value: "{{ template "nodeslist" .Values }}"
+          - name: ES_JAVA_OPTS
+            value: "-Xms4096m -Xmx4096m"
+            {{- if .Values.securityEnabled }}
+          - name: xpack.security.enabled
+            value: "true"
+# internodes SSL comunications
+          - name: xpack.security.transport.ssl.enabled
+            value: "true"
+          - name: xpack.security.transport.ssl.verification_mode
+            value: "none"
+          - name: xpack.security.transport.ssl.keystore.path
+            value: "certs/${node.name}.p12"
+          - name: xpack.security.transport.ssl.truststore.path
+            value: "certs/${node.name}.p12"
+# Passwords for in-built users
+          - name: password_elastic
+            value: "{{ .Values.password_elastic }}"
+          - name: password_apm_system
+            value: "{{ .Values.password_apm_system }}"
+          - name: password_kibana
+            value: "{{ .Values.password_kibana }}"
+          - name: password_logstash_system
+            value: "{{ .Values.password_logstash_system }}"
+          - name: password_beats_system
+            value: "{{ .Values.password_beats_system }}"
+          - name: password_remote_monitoring_user
+            value: "{{ .Values.password_remote_monitoring_user }}"
+# used in expect script (spawn /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive -u "$env(ELASTICSEARCH_URL)")
+          - name: ELASTICSEARCH_URL
+            value: "http://elasticsearch:9200"
+          - name: xpack.security.authc.realms.ldap.ldap1.order
+            value: "0"
+          - name: xpack.security.authc.realms.ldap.ldap1.url
+            value: "ldaps://ds.nycid.nycnet:636"            
+          - name: xpack.security.authc.realms.ldap.ldap1.bind_dn
+            value: "cn=SmartOpsboardServiceUser,ou=accounts,o=services"
+          - name: xpack.security.authc.realms.ldap.ldap1.user_search.base_dn
+            value: "ou=USERS,dc=DSNY,o=NYCNET"
+          - name: xpack.security.authc.realms.ldap.ldap1.user_search.filter
+            value: "(cn={0})"
+          - name: xpack.security.authc.realms.ldap.ldap1.group_search.base_dn
+            value: "ou=USERS,dc=DSNY,o=NYCNET"
+          - name: xpack.security.authc.realms.ldap.ldap1.group_search.filter
+            value: "(cn={0})"
+          - name: xpack.security.authc.realms.ldap.ldap1.files.role_mapping
+            value: "/usr/share/elasticsearch/config/role_mapping.yml"
+          - name: xpack.security.authc.realms.ldap.ldap1.unmapped_groups_as_roles
+            value: "false"
+          - name: xpack.security.authc.realms.ldap.ldap1.ssl.certificate_authorities
+            value: "/usr/share/elasticsearch/config/certs/ca_with_ldap.crt"
+          - name: xpack.security.authc.realms.ldap.ldap1.ssl.certificate_authorities.0
+            value: "/usr/share/elasticsearch/config/certs/ca_with_ldap.crt"
+          - name: xpack.security.authc.realms.ldap.ldap1.ssl.verification_mode
+            value: certificate
+        volumeMounts:
+          - mountPath: /usr/share/elasticsearch/data
+            name: data
+          - mountPath: "/usr/share/elasticsearch/config/certs"
+            name: certificates
+            readOnly: true
+          - name: role-mapping-volume
+            mountPath: /usr/share/elasticsearch/config/role_mapping.yml
+            subPath: role_mapping.yml
+      volumes:
+        - name: certificates
+          secret:
+            secretName: certificates
+        - name: role-mapping-volume
+          configMap:
+            name: role-mapping-config
+            {{- end }}
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      - name: increase-vm-max-map
+        image: busybox
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      - name: increase-fd-ulimit
+        image: busybox
+        command: ["sh", "-c", "ulimit -n 65536"]
+        securityContext:
+          privileged: true
+  {{- if .Values.persistenceEnabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: elasticsearch
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+    {{- if .Values.persistenceStorageClass }}
+    {{- if (eq "-" .Values.persistenceStorageClass) }}
+      storageClassName: ""
+    {{- else }}
+      storageClassName: "{{ .Values.persistenceStorageClass }}"
+    {{- end }}
+    {{- end }}
+      resources:
+        requests:
+          storage: "{{ .Values.persistenceSize }}"
+  {{- else }}
+      nodeSelector:
+        data: "true"
+      volumes:
+        - name: data
+          hostPath:
+            path: {{ .Values.persistenceHostPath }}
+        - name: snaprepo
+          hostPath:
+            path: /data/efk-archive
+  {{- end }}
+ 

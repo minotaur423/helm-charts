@@ -1,0 +1,148 @@
+labels:
+categories:
+- elasticsearch
+questions:
+
+- variable: replicaCount
+  description: "Number of nodes in elasticsearch cluster"
+  label: "Replica count"
+  type: int
+  default: 3
+  required: true
+  group: "Elasticsearch Config"
+- variable: securityEnabled
+  default: false
+  description: "Is security enabled?"
+  label: Security enabled
+  type: boolean
+  group: "Security"
+  show_subquestion_if: true
+  subquestions:
+
+  - variable: password_elastic
+    default: "ChangeMe"
+    description: "Elasticsearch password for elastic"
+    type: string
+    label: Password for elastic
+  - variable: password_apm_system
+    default: "ChangeMe"
+    description: "Elasticsearch password for apm_system"
+    type: string
+    label: Password for apm_system
+  - variable: password_kibana
+    default: "ChangeMe"
+    description: "Elasticsearch password for kibana"
+    type: string
+    label: Elasticsearch password
+  - variable: password_logstash_system
+    default: "ChangeMe"
+    description: "Elasticsearch password for logstash_system"
+    type: string
+    label: Password for logstash_system
+  - variable: password_beats_system
+    default: "ChangeMe"
+    description: "Elasticsearch password for beats_system"
+    type: string
+    label: Password for beats_system
+  - variable: password_remote_monitoring_user
+    default: "ChangeMe"
+    description: "Elasticsearch password for remote_monitoring_user"
+    type: string
+    label: Password for remote_monitoring_user
+
+- variable: defaultImage
+  default: false
+  description: "Use default Docker image"
+  label: Use Default Image
+  type: boolean
+  group: "Container Images"
+  show_subquestion_if: false
+  subquestions:
+  - variable: elasticsearchImage
+    default: "msplva-dsnsmt71.csc.nycnet:5000/elasticsearch/elasticsearch"
+    description: "Elasticsearch image name"
+    type: string
+    label: ElasticSearch Image Name
+  - variable: elasticsearchImageTag
+    default: "7.17.7"
+    description: "Elasticsearch image tag"
+    type: string
+    label: Elasticsearch Image Tag
+  - variable: kibanaImage
+    default: "msplva-dsnsmt71.csc.nycnet:5000/kibana/kibana"
+    description: "Kibana image name"
+    type: string
+    label: Kibana Image Name
+  - variable: kibanaImageTag
+    default: "7.17.7"
+    description: "Kibana image tag"
+    type: string
+    label: Kibana Image Tag
+  - variable: logstashImage
+    default: "msplva-dsnsmt71.csc.nycnet:5000/logstash/logstash-oss"
+    description: "logstash image name"
+    type: string
+    label: logstash Image Name
+  - variable: logstashImageTag
+    default: "7.17.7"
+    description: "logstash image tag"
+    type: string
+    label: logstash Image Tag
+  - variable: cerebroImage
+    default: "msplva-dsnsmt71.csc.nycnet:5000/lmenezes/cerebro"
+    description: "cerebro image name"
+    type: string
+    label: cerebro Image Name
+  - variable: cerebroImageTag
+    default: "0.8.5"
+    description: "cerebro image tag"
+    type: string
+    label: cerebro Image Tag
+- variable: persistenceEnabled
+  default: false
+  description: "Enable persistent volume for elasticsearch"
+  type: boolean
+  required: true
+  label: Enable Elasticsearch Persistent Volume
+  show_subquestion_if: true
+  group: "Persistence"
+  subquestions:
+  - variable: persistenceStorageClass
+    default: ""
+    description: "If undefined or set to null, using the default StorageClass. Defaults to null."
+    type: storageclass
+    label: Storage Class for Elasticsearch Node
+  - variable: persistenceSize
+    default: "100Gi"
+    description: "Elasticsearch persistent volume size"
+    required: true
+    type: string
+    label: Elasticsearch Persistent Volume Size of Node
+- variable: persistenceHostPath
+  default: "/data/efk"
+  description: "Custom EFK host path read and write permission are required, default to /data/efk"
+  type: string
+  label: NFS Host Path
+  required: true
+  show_if: "persistenceEnabled=false"
+  group: "Persistence"
+- variable: ingressEnabled
+  default: true
+  description: "Expose app using Layer 7 Load Balancer - ingress"
+  type: boolean
+  label: Expose app using Layer 7 Load Balancer
+  show_subquestion_if: true
+  group: "Load Balancing"
+  subquestions:
+  - variable: ingressTls
+    default: false
+    description: "Enable ssl"
+    type: boolean
+    label: Enable ssl termination.
+  - variable: ingressCertname
+    default: "httpcert"
+    description: "Certificate name"
+    type: string
+    required: true
+    label: "Certificate name"
+    show_if: "ingressTls=true"
