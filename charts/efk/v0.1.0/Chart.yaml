@@ -1,0 +1,7 @@
+apiVersion: v2
+name: elasticsearch-kibana
+version: 0.1.0
+appVersion: "7.17.7"
+description: Elasticsearch, Logstash, and Kibana
+type: application
+icon: file://../efk-logo.jpg
