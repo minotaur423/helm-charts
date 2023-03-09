@@ -59,7 +59,7 @@ questions:
   show_subquestion_if: false
   subquestions:
   - variable: elasticsearchImage
-    default: "msplva-dsnsmt71.csc.nycnet:5000/elasticsearch/elasticsearch"
+    default: "docker.elastic.co/elasticsearch/elasticsearch"
     description: "Elasticsearch image name"
     type: string
     label: ElasticSearch Image Name
@@ -69,7 +69,7 @@ questions:
     type: string
     label: Elasticsearch Image Tag
   - variable: kibanaImage
-    default: "msplva-dsnsmt71.csc.nycnet:5000/kibana/kibana"
+    default: "docker.elastic.co/kibana/kibana"
     description: "Kibana image name"
     type: string
     label: Kibana Image Name
@@ -79,7 +79,7 @@ questions:
     type: string
     label: Kibana Image Tag
   - variable: logstashImage
-    default: "msplva-dsnsmt71.csc.nycnet:5000/logstash/logstash-oss"
+    default: "docker.elastic.co/logstash/logstash-oss"
     description: "logstash image name"
     type: string
     label: logstash Image Name
@@ -89,7 +89,7 @@ questions:
     type: string
     label: logstash Image Tag
   - variable: cerebroImage
-    default: "msplva-dsnsmt71.csc.nycnet:5000/lmenezes/cerebro"
+    default: "lmenezes/cerebro"
     description: "cerebro image name"
     type: string
     label: cerebro Image Name

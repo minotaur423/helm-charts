@@ -16,7 +16,7 @@ spec:
       containers:
       - name: logstash
         {{- if .Values.defaultImage }}
-        image: msplva-dsnsmt71.csc.nycnet:5000/logstash/logstash:8.5.2
+        image: docker.elastic.co/logstash/logstash-oss:8.6.2-amd64
         {{- else }}
         image: "{{ .Values.logstashImage }}:{{ .Values.logstashImageTag }}"
         {{- end }}

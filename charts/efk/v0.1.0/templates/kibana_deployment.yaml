@@ -19,14 +19,14 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: cerebro
+              - key: kibana
                 operator: In
                 values:
                 - "true"
       containers:
       - name: kibana
         {{- if .Values.defaultImage }}
-        image: msplva-dsnsmt71.csc.nycnet:5000/kibana/kibana:8.5.2
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2-amd64
         {{- else }}
         image: "{{ .Values.kibanaImage }}:{{ .Values.kibanaImageTag }}"
         {{- end }}
