@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+data:
+  logstash.yml: |-
+    http.host: "0.0.0.0"
+    path.config: /usr/share/logstash/pipeline
+  pipeline.conf: |-
+    input {
+       udp {
+         port => 5044
+         codec => "json"
+         buffer_size => "1048576"
+       }
+       tcp {
+         port  => 5044
+         codec => "json"
+       }
+       {{- if .Values.securityEnabled }}
+       elasticsearch {
+         user => elastic
+         password => {{ .Values.password_elastic }}
+       }
+       {{- end }}
+    }
+    filter {
+       grok {
+          match => { "message" => "%{DATA}json\(%{DATA:message}\)json%{DATA}" }
+          overwrite => [ "message" ]
+       }
+       json {
+         source => "message"
+       }
+       {{- if .Values.securityEnabled }}
+       elasticsearch {
+         user => elastic
+         password => {{ .Values.password_elastic }}
+       }
+       {{- end }}
+    }
+    output {
+       elasticsearch {
+         hosts => ["elasticsearch:9200"]
+         index => "logstash-%{+YYYY.MM.dd}"
+         {{- if .Values.securityEnabled }}
+         user => elastic
+         password => {{ .Values.password_elastic }}
+         {{- end }}
+       }
+    }

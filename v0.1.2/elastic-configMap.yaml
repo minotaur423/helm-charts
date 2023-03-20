@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+  namespace: elasticsearch
+data:
+  elasticsearch.yml: |
+    cluster.name: "elasticsearch"
+    bootstrap.memory_lock: false
+    xpack.license.self_generated.type: basic
+    network.host: "0.0.0.0"
+    logger.org.elasticsearch.transport: error
+    logger.org.elasticsearch.discovery: error
+    discovery.seed_hosts:
+       - elasticsearch-0.elasticsearch.elasticsearch.svc.cluster.local:9300
+       - elasticsearch-1.elasticsearch.elasticsearch.svc.cluster.local:9300
+       - elasticsearch-2.elasticsearch.elasticsearch.svc.cluster.local:9300
+    cluster.initial_master_nodes:
+       - elasticsearch-0
+       - elasticsearch-1
+       - elasticsearch-2
+  NODE_MASTER: "true"
+  NODE_DATA: "true"
+  NUMBER_OF_MASTERS: "3"
+  NUMBER_OF_REPLICAS: "2"

@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: logstash
+  labels:
+    app: logstash
+spec:
+  selector:
+    app: logstash
+  type: NodePort
+  ports:
+    - name: logstashtcp
+      nodePort: 31500
+      port: 5044
+      protocol: TCP
+      targetPort: 5044
+    - name: logstashudp
+      nodePort: 31500
+      port: 5044
+      protocol: UDP
+      targetPort: 5044

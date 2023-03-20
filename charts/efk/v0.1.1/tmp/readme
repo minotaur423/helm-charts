@@ -1,0 +1,60 @@
+
+
+https://www.elastic.co/guide/en/elasticsearch/reference/master/encrypting-communications-certificates.html
+https://villekaaria.eu/2019/10/20/configure-elasticsearch-logstash-and-kibana-to-use-x-pack-and-ssl/
+
+
+
+
+openssl pkcs12 -in node-1.p12 -nocerts -out elasticsearch.key
+openssl pkcs12 -in node-1.p12 -clcerts -nokeys -out elasticsearch.crt
+
+
+
+
+openssl pkcs12 -in elastic-stack-ca.p12 -nocerts -out ca.key
+openssl pkcs12 -in elastic-stack-ca.p12 -clcerts -nokeys -out ca.crt
+
+
+
+
+
+
+https://www.elastic.co/guide/en/elasticsearch/reference/7.5/configuring-tls.html#tls-http
+
+If the certificate is in PKCS#12 format, add the following information to the elasticsearch.yml file on each node:
+
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.keystore.path: certs/elastic-certificates.p12 
+xpack.security.http.ssl.truststore.path: certs/elastic-certificates.p12 
+
+	
+	If you created a separate certificate for each node, then you might need to customize this path on each node. If the filename matches the node name, you can use the certs/${node.name}.p12 format, for example.
+
+
+
+	if the certificate is in PEM format, add the following information to the elasticsearch.yml file on each node:
+
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.key:  /home/es/config/node01.key 
+xpack.security.http.ssl.certificate: /home/es/config/node01.crt 
+xpack.security.http.ssl.certificate_authorities: [ "/home/es/config/ca.crt" ] 
+
+The full path to the node key file. This must be a
+
+
+
+
+
+./bin/elasticsearch-certutil cert \
+  --ca elastic-stack-ca.p12 \
+  --dns localhost \
+  --ip 127.0.0.1,::1 \
+  --out config/certs/$(hostname).p12
+
+
+/usr/share/elasticsearch/config
+
+
+
+
