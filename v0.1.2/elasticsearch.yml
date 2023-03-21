@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: elasticsearch
+spec:
+  serviceName: elasticsearch
+  replicas: 3
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      volumes:
+      - name: elasticsearch-data
+        hostPath:
+          path: /data/efk
+          type: DirectoryOrCreate
+      - name: elasticsearch-yml
+        configMap:
+          name: elasticsearch-config
+          items:
+            - key: elasticsearch.yml
+              path: elasticsearch.yml
+      - name: elastic-certificates
+        secret:
+          secretName: elastic-certificates
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      - name: increase-vm-max-map
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        command: [ 'sh', '-c', 'sysctl -w vm.max_map_count=262144' ]
+      - name: fix-permissions
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        command: ['sh', '-c', 'chown -R 1000:1000 /usr/share/elasticsearch/data']
+        volumeMounts:
+        - name: elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.5.2
+        volumeMounts:
+          - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+            name: elasticsearch-yml
+            subPath: elasticsearch.yml
+          - mountPath: /usr/share/elasticsearch/data
+            name: elasticsearch-data
+          - mountPath: /usr/share/elasticsearch/config/certs
+            name: elastic-certificates
+        env:
+          - name: node.name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NODE_MASTER
+            valueFrom:
+              configMapKeyRef:
+                name: elasticsearch-config
+                key: NODE_MASTER
+          - name: NODE_DATA
+            valueFrom:
+              configMapKeyRef:
+                name: elasticsearch-config
+                key: NODE_DATA
+          - name: NUMBER_OF_MASTERS
+            valueFrom:
+              configMapKeyRef:
+                name: elasticsearch-config
+                key: NUMBER_OF_MASTERS
+          - name: NUMBER_OF_REPLICAS
+            valueFrom:
+              configMapKeyRef:
+                name: elasticsearch-config
+                key: NUMBER_OF_REPLICAS
+          - name: ES_JAVA_OPTS
+            valueFrom:
+              configMapKeyRef:
+                name: elasticsearch-config
+                key: ES_JAVA_OPTS
+          - name: ES_PORT
+            value: "9200"
+          - name: ELASTIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elastic-credentials
+                key: ELASTIC_PASSWORD
+        ports:
+            - containerPort: 9200
+              name: rest
+              protocol: TCP
+            - containerPort: 9300
+              name: transport
+              protocol: TCP

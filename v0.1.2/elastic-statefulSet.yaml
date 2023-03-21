@@ -78,21 +78,26 @@ spec:
             - name: elasticsearch-yml
               mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
               subPath: elasticsearch.yml
-        resources:
+            - name: elastic-certificates
+              mountPath: /usr/share/elasticsearch/config/certs
+          resources:
             requests:
-                cpu: "1000m"
-                memory: "2Gi"
+              cpu: "1000m"
+              memory: "2Gi"
             limits:
-                cpu: "1000m"
-                memory: "2Gi"      
-        volumes:
-        - hostPath:
-            path: /data/efk
-            type: DirectoryOrCreate
-          name: elasticsearch-data
+              cpu: "1000m"
+              memory: "2Gi"
+      volumes:
         - name: elasticsearch-yml
           configMap:
             name: elasticsearch-config
             items:
               - key: elasticsearch.yml
                 path: elasticsearch.yml
+        - name: elastic-certificates
+          secret:
+            secretName: elastic-certificates
+        - name: elasticsearch-data
+          hostPath:
+            path: /data/efk
+            type: DirectoryOrCreate

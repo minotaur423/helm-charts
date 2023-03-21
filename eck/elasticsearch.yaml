@@ -1,0 +1,94 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: efk-np
+spec:
+  version: 8.6.2
+  volumeClaimDeletePolicy: DeleteOnScaledownOnly
+  nodeSets:
+  - name: master
+    count: 2
+    config:
+      node.roles: ["master"]
+      xpack.ml.enabled: true
+    podTemplate:
+      spec:
+        containers:
+        - name: elasticsearch
+          volumeMounts:
+          - name: elasticsearch-data
+            mountPath: "/usr/share/elasticsearch/data"
+        volumes:
+        - hostPath:
+            path: /data/efk
+            type: DirectoryOrCreate
+          name: elasticsearch-data
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: master
+                  operator: In
+                  values:
+                  - "true"
+        initContainers:
+        - name: increase-vm-max-map
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        - name: increase-fd-ulimit
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'ulimit -n 65536']
+        - name: fix-permissions
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'chown -R 1000:1000 /usr/share/elasticsearch/data']
+  - name: data
+    count: 3
+    config:
+      node.roles: ["data", "master", "voting_only"]
+    podTemplate:
+      spec:
+        containers:
+        - name: elasticsearch
+          volumeMounts:
+          - name: elasticsearch-data
+            mountPath: "/usr/share/elasticsearch/data"
+        volumes:
+        - hostPath:
+            path: /data/efk
+            type: DirectoryOrCreate
+          name: elasticsearch-data
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: data
+                  operator: In
+                  values:
+                  - "true"
+        initContainers:
+        - name: increase-vm-max-map
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        - name: increase-fd-ulimit
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'ulimit -n 65536']
+        - name: fix-permissions
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'chown -R 1000:1000 /usr/share/elasticsearch/data']
+
+---
+
