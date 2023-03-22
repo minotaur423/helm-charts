@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  labels:
+    app: logstash
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: data
+                operator: In
+                values:
+                - "true"
+      containers:
+      - image: docker.elastic.co/logstash/logstash-oss:8.5.2
+        name: logstash
+        ports:
+        - containerPort: 25826
+        - containerPort: 5044
+        env:
+        - name: ES_HOSTS
+          value: "https://efk-np-es-http:9200"
+        - name: ES_USER
+          value: "elastic"
+        - name: ES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: efk-np-es-elastic-user
+              key: elastic
+        volumeMounts:
+        - name: config-volume
+          mountPath: /usr/share/logstash/config
+        - name: logstash-pipeline-volume
+          mountPath: /usr/share/logstash/pipeline
+        - name: cert-ca
+          mountPath: "/etc/logstash/certificates"
+          readOnly: true
+      restartPolicy: Always
+      volumes:
+      - name: config-volume
+        configMap:
+          name: logstash-configmap
+          items:
+            - key: logstash.yml
+              path: logstash.yml
+      - name: logstash-pipeline-volume
+        configMap:
+          name: logstash-configmap
+          items:
+            - key: logstash.conf
+              path: logstash.conf
+      - name: cert-ca
+        secret:
+          secretName: efk-np-es-http-certs-public

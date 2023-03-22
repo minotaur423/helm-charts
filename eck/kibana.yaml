@@ -1,0 +1,32 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+spec:
+  version: 8.6.2
+  count: 1
+  elasticsearchRef:
+    name: efk-np
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: false
+        subjectAltNames:
+          - dns: kibana.home.lcl
+    service:
+      spec:
+        type: LoadBalancer
+  podTemplate:
+    spec:
+      containers:
+      - name: kibana
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kibana
+                operator: In
+                values:
+                - "true"
+
